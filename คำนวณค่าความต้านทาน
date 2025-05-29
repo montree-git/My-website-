@@ -1,0 +1,192 @@
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>คำนวณค่า R ตามสีตัวต้านทาน</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 1.2em;
+    padding: 20px;
+  }
+  h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+  }
+  .section {
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+    font-size: 1.2em;
+  }
+  select {
+    font-size: 1.2em;
+    padding: 5px;
+    margin-top: 5px;
+  }
+  button {
+    font-size: 1.5em;
+    padding: 8px 16px;
+    margin-top: 20px;
+    cursor: pointer;
+  }
+  #colorBars {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .color-block {
+    width: 80px;
+    height: 30px;
+    border: 1px solid #000;
+  }
+  #result {
+    margin-top: 20px;
+    font-size: 1.8em;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h2>เลือกสีของตัวต้านทานเพื่อดูสีจริงและคำนวณค่า R</h2>
+
+<!-- ส่วนเลือกจำนวนแถบสี -->
+<div class="section">
+  <label for="bandCount">จำนวนแถบสี:</label>
+  <select id="bandCount" onchange="updateColorInputs()">
+    <option value="3">3 แถบ</option>
+    <option value="4">4 แถบ</option>
+    <option value="5">5 แถบ</option>
+    <option value="6">6 แถบ</option>
+  </select>
+</div>
+
+<!-- ส่วนสร้าง input สำหรับเลือกสีแถบสี -->
+<div class="section" id="colorInputs"></div>
+
+<!-- ส่วนเลือกสีแถบสี 3 (ตัวคูณ) -->
+<div class="section">
+  <label for="multiplierColor">สีแถบสี (ตัวคูณ):</label>
+  <select id="multiplierColor">
+    <option value="1">ดำ x1</option>
+    <option value="10">น้ำตาล x10</option>
+    <option value="100">แดง x100</option>
+    <option value="1000">ส้ม x1,000</option>
+    <option value="10000">เหลือง x10,000</option>
+    <option value="100000">เขียว x100,000</option>
+    <option value="1000000">น้ำเงิน x1,000,000</option>
+    <option value="0.1">ทอง x0.1</option>
+    <option value="0.01">เงิน x0.01</option>
+  </select>
+</div>
+
+<!-- ปุ่มคำนวณ -->
+<button onclick="calculateResistance()">คำนวณ R</button>
+
+<!-- แสดงสีของแถบสี -->
+<div id="colorBars"></div>
+
+<h3>ค่าความต้านทาน:</h3>
+<p id="resistance"></p>
+
+<script>
+// รายการสีของตัวต้านทาน พร้อมค่าตัวคูณตามรูปตัวอย่าง
+const colorOptions = [
+  { name: "ดำ", code: "#000000", value: 0 },
+  { name: "น้ำตาล", code: "#8B4513", value: 1 },
+  { name: "แดง", code: "#FF0000", value: 2 },
+  { name: "ส้ม", code: "#FFA500", value: 3 },
+  { name: "เหลือง", code: "#FFFF00", value: 4 },
+  { name: "เขียว", code: "#008000", value: 5 },
+  { name: "น้ำเงิน", code: "#0000FF", value: 6 },
+  { name: "ม่วง", code: "#800080", value: 7 },
+  { name: "เทา", code: "#808080", value: 8 },
+  { name: "ขาว", code: "#FFFFFF", value: 9 }
+];
+
+function updateColorInputs() {
+  const bandCount = parseInt(document.getElementById('bandCount').value);
+  const container = document.getElementById('colorInputs');
+  container.innerHTML = '';
+
+  for (let i = 0; i < bandCount; i++) {
+    const label = document.createElement('label');
+    label.innerText = `สีแถบสี ${i + 1}:`;
+    const select = document.createElement('select');
+    select.id = `colorSelect${i}`;
+    select.onchange = showColors; // เมื่อเปลี่ยนสีให้เปลี่ยนสีทันที
+    colorOptions.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.innerText = opt.name;
+      select.appendChild(option);
+    });
+    container.appendChild(label);
+    container.appendChild(select);
+  }
+
+  showColors(); // แสดงสีทันทีหลังสร้าง input
+}
+
+function showColors() {
+  const bandCount = parseInt(document.getElementById('bandCount').value);
+  const colorBarsContainer = document.getElementById('colorBars');
+  colorBarsContainer.innerHTML = '';
+
+  for (let i = 0; i < bandCount; i++) {
+    const select = document.getElementById(`colorSelect${i}`);
+    const colorValue = parseInt(select.value);
+    const colorCode = colorOptions.find(opt => opt.value === colorValue).code;
+
+    const div = document.createElement('div');
+    div.className = 'color-block';
+    div.style.backgroundColor = colorCode;
+    colorBarsContainer.appendChild(div);
+  }
+}
+
+function calculateResistance() {
+  showColors();
+
+  const bandCount = parseInt(document.getElementById('bandCount').value);
+  const digits = [];
+
+  // ดึงค่าสีของแถบแรกถึงแถบก่อนสุดท้าย (ยกเว้นแถบสุดท้ายเป็นตัวคูณ)
+  for (let i = 0; i < bandCount - 1; i++) {
+    const val = parseInt(document.getElementById(`colorSelect${i}`).value);
+    digits.push(val);
+  }
+
+  // คำนวณตัวเลขหลัก
+  let mainNumber = 0;
+  for (let i = 0; i < digits.length; i++) {
+    mainNumber = mainNumber * 10 + digits[i];
+  }
+
+  // ค่าตัวคูณจาก select ตัวคูณ
+  const multiplierValue = parseFloat(document.getElementById(`multiplierColor`).value);
+  const resistance = mainNumber * multiplierValue;
+
+  // แสดงผลในหน่วยที่เหมาะสม
+  let displayValue = resistance;
+  let unit = 'Ω';
+
+  if (resistance >= 1e6) {
+    displayValue = resistance / 1e6;
+    unit = 'MΩ';
+  } else if (resistance >= 1e3) {
+    displayValue = resistance / 1e3;
+    unit = 'kΩ';
+  }
+
+  document.getElementById('resistance').innerText = `ค่าความต้านทานประมาณ ${displayValue.toFixed(2)} ${unit}`;
+}
+
+// เริ่มต้นสร้าง input เมื่อโหลดหน้า
+updateColorInputs();
+</script>
+
+</body>
+
